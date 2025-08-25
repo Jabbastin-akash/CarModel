@@ -13,6 +13,7 @@ public class Car {
     private String brand;
     private int year;
     private String type;
+    @Column(length = 2048)
     private String imageurl;
 
     // Default constructor (required by JPA)
