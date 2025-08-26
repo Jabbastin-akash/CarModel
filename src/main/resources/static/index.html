@@ -1,0 +1,55 @@
+<script>
+    const API_URL = "http://localhost:8080/api/cars";
+
+    // Fetch and display cars
+    async function loadCars() {
+        const response = await fetch(`${API_URL}/all`);
+        const cars = await response.json();
+
+        const tableBody = document.querySelector("#carTable tbody");
+        tableBody.innerHTML = "";
+
+        cars.forEach(car => {
+            const row = `
+      <tr>
+        <td>${car.id}</td>
+        <td>${car.brand}</td>
+        <td>${car.year}</td>
+        <td>${car.type}</td>
+        <td><img src="${car.imageurl}" alt="car" width="100"></td>
+        <td>
+          <button onclick="deleteCar(${car.id})">Delete</button>
+        </td>
+      </tr>
+    `;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    // Add a new car
+    async function addCar() {
+        const car = {
+            brand: document.getElementById("brand").value,
+            year: document.getElementById("year").value,
+            type: document.getElementById("type").value,
+            imageurl: document.getElementById("imageurl").value
+        };
+
+        await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(car)
+        });
+
+        loadCars(); // Refresh list
+    }
+
+    // Delete a car
+    async function deleteCar(id) {
+        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        loadCars();
+    }
+
+    // Load cars on page load
+    window.onload = loadCars;
+</script>
