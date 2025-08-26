@@ -14,7 +14,7 @@ public class CarController {
     private CarRepository carRepository;
 
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Car> getAllCars() {
         return carRepository.findAll();
     }
