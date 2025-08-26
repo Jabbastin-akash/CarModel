@@ -7,22 +7,23 @@
         const cars = await response.json();
 
         const tableBody = document.querySelector("#carTable tbody");
-        tableBody.innerHTML = "";
+        tableBody.innerHTML = ""; // clear old rows
 
         cars.forEach(car => {
             const row = `
-      <tr>
-        <td>${car.id}</td>
-        <td>${car.brand}</td>
-        <td>${car.year}</td>
-        <td>${car.type}</td>
-        <td><img src="${car.imageurl}" alt="car" width="100"></td>
-        <td>
-          <button onclick="deleteCar(${car.id})">Delete</button>
-        </td>
-      </tr>
-    `;
-            tableBody.innerHTML += row;
+                <tr>
+                    <td>${car.id}</td>
+                    <td>${car.brand}</td>
+                    <td>${car.year}</td>
+                    <td>${car.type}</td>
+                    <td><img src="${car.imageurl}" alt="car" width="100"></td>
+                    <td>
+                        <button onclick="deleteCar(${car.id})">Delete</button>
+                    </td>
+                </tr>
+            `;
+            // ✅ safer way to append row
+            tableBody.insertAdjacentHTML("beforeend", row);
         });
     }
 
