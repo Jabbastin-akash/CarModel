@@ -1,76 +1,90 @@
 package com.example.CarModel;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/cars")
 public class CarController {
 
-    @Autowired
-    private CarRepository carRepository;
+    private final CarRepository carRepository;
 
-    // ✅ Brand-aware GET all cars
-    @GetMapping("/{brand}/all")
-    public List<Car> getAllCars(@PathVariable String brand) {
-        try {
-            BrandContextHolder.setBrand(brand.toLowerCase());
-            return carRepository.findAll();
-        } finally {
-            BrandContextHolder.clear(); // avoid leaks
-        }
+    public CarController(CarRepository carRepository) {
+        this.carRepository = carRepository;
     }
 
-    // ✅ Brand-aware GET car by ID
-    @GetMapping("/{brand}/{id}")
-    public Optional<Car> getCarById(@PathVariable String brand, @PathVariable Long id) {
-        try {
-            BrandContextHolder.setBrand(brand.toLowerCase());
-            return carRepository.findById(id);
-        } finally {
-            BrandContextHolder.clear();
-        }
-    }
-
-    // ✅ Brand-aware CREATE car
+    // Save car into correct DB
     @PostMapping("/{brand}")
-    public Car createCar(@PathVariable String brand, @RequestBody Car car) {
+    public ResponseEntity<?> addCar(@PathVariable String brand, @RequestBody Car car) {
         try {
-            BrandContextHolder.setBrand(brand.toLowerCase());
-            return carRepository.save(car);
-        } finally {
-            BrandContextHolder.clear();
+            if (car == null || brand == null) {
+                return ResponseEntity.badRequest().body("Car and brand cannot be null");
+            }
+
+            // Validate brand name
+            brand = brand.toLowerCase();
+            if (!brand.matches("^(bmw|audi|toyota)$")) {
+                return ResponseEntity.badRequest().body("Invalid brand. Must be BMW, Audi, or Toyota");
+            }
+
+            // Set the brand context and save
+            BrandContextHolder.setBrand(brand);
+            Car savedCar = carRepository.save(car);
+            return ResponseEntity.ok(savedCar);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error saving car: " + e.getMessage());
         }
     }
 
-    // ✅ Brand-aware UPDATE car
-    @PutMapping("/{brand}/{id}")
-    public Car updateCar(@PathVariable String brand, @PathVariable Long id, @RequestBody Car carDetails) {
+    // Fetch all cars from correct DB
+    @GetMapping("/{brand}/all")
+    public ResponseEntity<?> getCars(@PathVariable String brand) {
         try {
-            BrandContextHolder.setBrand(brand.toLowerCase());
-            return carRepository.findById(id).map(car -> {
-                car.setBrand(carDetails.getBrand());
-                car.setYear(carDetails.getYear());
-                car.setType(carDetails.getType());
-                car.setImageurl(carDetails.getImageurl());
-                return carRepository.save(car);
-            }).orElseThrow(() -> new RuntimeException("Car not found with id " + id));
-        } finally {
-            BrandContextHolder.clear();
+            // Validate brand name
+            brand = brand.toLowerCase();
+            if (!brand.matches("^(bmw|audi|toyota)$")) {
+                return ResponseEntity.badRequest().body("Invalid brand. Must be BMW, Audi, or Toyota");
+            }
+
+            BrandContextHolder.setBrand(brand);
+            List<Car> cars = carRepository.findAll();
+            return ResponseEntity.ok(cars);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error fetching cars: " + e.getMessage());
         }
     }
 
-    // ✅ Brand-aware DELETE car
+    // Delete a car by ID from specified brand
     @DeleteMapping("/{brand}/{id}")
-    public String deleteCar(@PathVariable String brand, @PathVariable Long id) {
+    public ResponseEntity<?> deleteCar(@PathVariable String brand, @PathVariable Long id) {
         try {
-            BrandContextHolder.setBrand(brand.toLowerCase());
+            // Validate brand name
+            brand = brand.toLowerCase();
+            if (!brand.matches("^(bmw|audi|toyota)$")) {
+                return ResponseEntity.badRequest().body("Invalid brand. Must be BMW, Audi, or Toyota");
+            }
+
+            BrandContextHolder.setBrand(brand);
+            if (!carRepository.existsById(id)) {
+                return ResponseEntity.notFound().build();
+            }
+
             carRepository.deleteById(id);
-            return "Car with ID " + id + " deleted from " + brand + "!";
-        } finally {
-            BrandContextHolder.clear();
+            return ResponseEntity.ok().body("Car with ID " + id + " deleted successfully from " + brand);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error deleting car: " + e.getMessage());
         }
+    }
+
+    // Handle validation errors
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleException(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("An error occurred: " + e.getMessage());
     }
 }
