@@ -22,15 +22,15 @@ public class CarController {
     // Save car into correct DB
     @PostMapping("/{brand}")
     public ResponseEntity<?> addCar(@PathVariable String brand, @RequestBody Car car) {
-        logger.info("Received POST request for brand: {} with car data: {}", brand, car);
+        logger.info("Received POST request for brand path: {} with car data: {}", brand, car);
         try {
             if (car == null) {
                 return ResponseEntity.badRequest().body("Car cannot be null");
             }
 
-            brand = brand.toLowerCase();
-            if (!brand.matches("^(bmw|audi|toyota)$")) {
-                return ResponseEntity.badRequest().body("Invalid brand. Must be BMW, Audi, or Toyota");
+            String dbKey = brand == null ? null : brand.toLowerCase();
+            if (dbKey == null || !dbKey.matches("^(bmw|audi|toyota)$")) {
+                return ResponseEntity.badRequest().body("Invalid brand path. Must be BMW, Audi, or Toyota");
             }
 
             if (car.getType() == null || car.getType().trim().isEmpty()) {
@@ -43,12 +43,10 @@ public class CarController {
                 return ResponseEntity.badRequest().body("Car year must be positive");
             }
 
-            BrandContextHolder.setBrand(brand);
+            // Route to the target DB using the path variable, but DO NOT overwrite the car.brand from the request
+            BrandContextHolder.setBrand(dbKey);
             try {
-                car.setBrand(brand);
                 Car saved = carService.save(car);
-                // Read back to ensure we return the fully populated entity
-                List<Car> all = carService.findAll();
                 return ResponseEntity.ok(saved);
             } finally {
                 BrandContextHolder.clearBrand();

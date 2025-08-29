@@ -1,56 +1,675 @@
-<script>
-    const API_URL = "http://localhost:8080/api/cars";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Model Viewer - Premium Car Collection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --bmw-color: #1f4e79;
+            --audi-color: #bb0a30;
+            --toyota-color: #eb0a1e;
+            --dark-bg: #1a1a1a;
+            --light-bg: #f8f9fa;
+        }
 
-    // Fetch and display cars
-    async function loadCars() {
-        const response = await fetch(`${API_URL}/all`);
-        const cars = await response.json();
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        const tableBody = document.querySelector("#carTable tbody");
-        tableBody.innerHTML = ""; // clear old rows
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
 
-        cars.forEach(car => {
-            const row = `
-                <tr>
-                    <td>${car.id}</td>
-                    <td>${car.brand}</td>
-                    <td>${car.year}</td>
-                    <td>${car.type}</td>
-                    <td><img src="${car.imageurl}" alt="car" width="100"></td>
-                    <td>
-                        <button onclick="deleteCar(${car.id})">Delete</button>
-                    </td>
-                </tr>
-            `;
-            // ✅ safer way to append row
-            tableBody.insertAdjacentHTML("beforeend", row);
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: var(--primary-color) !important;
+        }
+
+        .brand-tabs {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .brand-tab {
+            border: none;
+            background: transparent;
+            padding: 0.8rem 2rem;
+            margin: 0 0.5rem;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .brand-tab.active.bmw {
+            background: var(--bmw-color);
+            color: white;
+            box-shadow: 0 5px 15px rgba(31, 78, 121, 0.4);
+        }
+
+        .brand-tab.active.audi {
+            background: var(--audi-color);
+            color: white;
+            box-shadow: 0 5px 15px rgba(187, 10, 48, 0.4);
+        }
+
+        .brand-tab.active.toyota {
+            background: var(--toyota-color);
+            color: white;
+            box-shadow: 0 5px 15px rgba(235, 10, 30, 0.4);
+        }
+
+        .brand-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .car-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .car-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .car-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+
+        .car-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .car-card:hover .car-image {
+            transform: scale(1.05);
+        }
+
+        .car-info {
+            padding: 1.5rem;
+        }
+
+        .car-brand {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .car-brand.bmw { color: var(--bmw-color); }
+        .car-brand.audi { color: var(--audi-color); }
+        .car-brand.toyota { color: var(--toyota-color); }
+
+        .car-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .car-year {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .car-type {
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .car-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+
+        .add-car-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 0.8rem 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn-primary {
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 25px;
+            padding: 0.8rem 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #ddd;
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stats-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .car-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .brand-tab {
+                padding: 0.6rem 1rem;
+                margin: 0.2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #27ae60;
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-car me-2"></i>
+                Car Model Viewer
+            </a>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-primary" onclick="toggleAddForm()">
+                    <i class="fas fa-plus me-2"></i>Add Car
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Stats Section -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-number" id="bmwCount">0</div>
+                    <div class="stats-label">BMW Cars</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-number" id="audiCount">0</div>
+                    <div class="stats-label">Audi Cars</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="stats-number" id="toyotaCount">0</div>
+                    <div class="stats-label">Toyota Cars</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brand Tabs -->
+        <div class="brand-tabs text-center">
+            <button class="brand-tab active bmw" onclick="switchBrand('bmw')" data-brand="bmw">
+                <i class="fas fa-car me-2"></i>BMW
+            </button>
+            <button class="brand-tab audi" onclick="switchBrand('audi')" data-brand="audi">
+                <i class="fas fa-car me-2"></i>Audi
+            </button>
+            <button class="brand-tab toyota" onclick="switchBrand('toyota')" data-brand="toyota">
+                <i class="fas fa-car me-2"></i>Toyota
+            </button>
+        </div>
+
+        <!-- Add Car Form -->
+        <div class="add-car-section" id="addCarForm" style="display: none;">
+            <h3 class="mb-4"><i class="fas fa-plus-circle me-2"></i>Add New Car</h3>
+            <form id="carForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="carBrand" class="form-label">Brand</label>
+                            <input type="text" class="form-control" id="carBrand" placeholder="e.g., BMW M3, Audi RS6, Toyota Supra" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="carYear" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="carYear" min="1900" max="2030" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="carType" class="form-label">Type</label>
+                            <select class="form-control" id="carType" required>
+                                <option value="">Select Type</option>
+                                <option value="sedan">Sedan</option>
+                                <option value="suv">SUV</option>
+                                <option value="sports">Sports Car</option>
+                                <option value="hatchback">Hatchback</option>
+                                <option value="convertible">Convertible</option>
+                                <option value="coupe">Coupe</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="carDatabase" class="form-label">Save to Database</label>
+                            <select class="form-control" id="carDatabase" required>
+                                <option value="bmw">BMW Database</option>
+                                <option value="audi">Audi Database</option>
+                                <option value="toyota">Toyota Database</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="carImageUrl" class="form-label">Image URL</label>
+                    <input type="url" class="form-control" id="carImageUrl" placeholder="https://example.com/car-image.jpg" required>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary me-3">
+                        <i class="fas fa-save me-2"></i>Add Car
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Cars Grid -->
+        <div class="car-grid" id="carGrid"></div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentBrand = 'bmw';
+        let cars = { bmw: [], audi: [], toyota: [] };
+
+        const API_BASE = 'http://localhost:8080/api/cars';
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllCars();
+            setupForm();
         });
-    }
 
-    // Add a new car
-    async function addCar() {
-        const car = {
-            brand: document.getElementById("brand").value,
-            year: document.getElementById("year").value,
-            type: document.getElementById("type").value,
-            imageurl: document.getElementById("imageurl").value
-        };
+        // Load cars for all brands
+        async function loadAllCars() {
+            showLoading(true);
+            try {
+                const brands = ['bmw', 'audi', 'toyota'];
+                const promises = brands.map(brand => loadCars(brand));
+                await Promise.all(promises);
+                updateStats();
+                displayCars();
+            } catch (error) {
+                console.error('Error loading cars:', error);
+                showNotification('Error loading cars', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
 
-        await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(car)
-        });
+        // Load cars for a specific brand
+        async function loadCars(brand) {
+            try {
+                const response = await fetch(`${API_BASE}/${brand}`);
+                if (response.ok) {
+                    cars[brand] = await response.json();
+                } else {
+                    cars[brand] = [];
+                }
+            } catch (error) {
+                console.error(`Error loading ${brand} cars:`, error);
+                cars[brand] = [];
+            }
+        }
 
-        loadCars(); // Refresh list
-    }
+        // Switch between brands
+        function switchBrand(brand) {
+            currentBrand = brand;
 
-    // Delete a car
-    async function deleteCar(id) {
-        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-        loadCars();
-    }
+            // Update active tab
+            document.querySelectorAll('.brand-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-brand="${brand}"]`).classList.add('active');
 
-    // Load cars on page load
-    window.onload = loadCars;
-</script>
+            // Display cars for selected brand
+            displayCars();
+        }
+
+        // Display cars for current brand
+        function displayCars() {
+            const carGrid = document.getElementById('carGrid');
+            const brandCars = cars[currentBrand] || [];
+
+            if (brandCars.length === 0) {
+                carGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-car"></i>
+                        <h3>No ${currentBrand.toUpperCase()} cars found</h3>
+                        <p>Add some cars to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            carGrid.innerHTML = brandCars.map(car => `
+                <div class="car-card">
+                    <button class="delete-btn" onclick="deleteCar(${car.id}, '${currentBrand}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <img src="${getValidImageUrl(car.imageurl)}" alt="${car.brand}" class="car-image"
+                         onerror="handleImageError(this, '${car.brand}', '${car.type}')">
+                    <div class="car-info">
+                        <div class="car-brand ${currentBrand}">${car.brand}</div>
+                        <div class="car-details">
+                            <span class="car-year">${car.year}</span>
+                            <span class="car-type">${car.type}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get valid image URL or fallback
+        function getValidImageUrl(imageurl) {
+            if (!imageurl || imageurl.trim() === '') {
+                return getDefaultCarImage();
+            }
+
+            // Check if it's a valid URL
+            try {
+                new URL(imageurl);
+                return imageurl;
+            } catch (e) {
+                return getDefaultCarImage();
+            }
+        }
+
+        // Handle image loading errors
+        function handleImageError(img, brand, type) {
+            console.log('Image failed to load for:', brand, type);
+            img.src = getCarImageByType(type);
+            img.onerror = function() {
+                this.src = getDefaultCarImage();
+            };
+        }
+
+        // Get car image by type
+        function getCarImageByType(type) {
+            const typeImages = {
+                'sedan': 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop&auto=format',
+                'suv': 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=250&fit=crop&auto=format',
+                'sports': 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=250&fit=crop&auto=format',
+                'hatchback': 'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400&h=250&fit=crop&auto=format',
+                'convertible': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=250&fit=crop&auto=format',
+                'coupe': 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=250&fit=crop&auto=format'
+            };
+
+            return typeImages[type.toLowerCase()] || getDefaultCarImage();
+        }
+
+        // Get default car image
+        function getDefaultCarImage() {
+            return 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=250&fit=crop&auto=format';
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('bmwCount').textContent = cars.bmw.length;
+            document.getElementById('audiCount').textContent = cars.audi.length;
+            document.getElementById('toyotaCount').textContent = cars.toyota.length;
+        }
+
+        // Toggle add car form
+        function toggleAddForm() {
+            const form = document.getElementById('addCarForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+
+            if (form.style.display === 'block') {
+                document.getElementById('carDatabase').value = currentBrand;
+            }
+        }
+
+        // Setup form submission
+        function setupForm() {
+            document.getElementById('carForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const formData = {
+                    brand: document.getElementById('carBrand').value,
+                    year: parseInt(document.getElementById('carYear').value),
+                    type: document.getElementById('carType').value,
+                    imageurl: document.getElementById('carImageUrl').value
+                };
+
+                const database = document.getElementById('carDatabase').value;
+
+                try {
+                    const response = await fetch(`${API_BASE}/${database}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (response.ok) {
+                        showNotification('Car added successfully!', 'success');
+                        this.reset();
+                        toggleAddForm();
+                        await loadCars(database);
+                        updateStats();
+                        if (currentBrand === database) {
+                            displayCars();
+                        }
+                    } else {
+                        const errorText = await response.text();
+                        showNotification(`Error: ${errorText}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding car:', error);
+                    showNotification('Error adding car', 'error');
+                }
+            });
+        }
+
+        // Delete car
+        async function deleteCar(carId, brand) {
+            if (!confirm('Are you sure you want to delete this car?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/${brand}/${carId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showNotification('Car deleted successfully!', 'success');
+                    await loadCars(brand);
+                    updateStats();
+                    if (currentBrand === brand) {
+                        displayCars();
+                    }
+                } else {
+                    showNotification('Error deleting car', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting car:', error);
+                showNotification('Error deleting car', 'error');
+            }
+        }
+
+        // Show loading spinner
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').style.display = show ? 'flex' : 'none';
+            document.getElementById('carGrid').style.display = show ? 'none' : 'grid';
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
