@@ -1,6 +1,7 @@
 package com.example.CarModel;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "cars")
@@ -8,12 +9,20 @@ public class Car {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty("id")
     private Long id;
 
+    @JsonProperty("brand")
     private String brand;
+
+    @JsonProperty("year")
     private int year;
+
+    @JsonProperty("type")
     private String type;
+
     @Column(length = 2048)
+    @JsonProperty("imageurl")
     private String imageurl;
 
     // Default constructor (required by JPA)
@@ -68,5 +77,16 @@ public class Car {
 
     public void setImageurl(String imageurl) {
         this.imageurl = imageurl;
+    }
+
+    @Override
+    public String toString() {
+        return "Car{" +
+                "id=" + id +
+                ", brand='" + brand + '\'' +
+                ", year=" + year +
+                ", type='" + type + '\'' +
+                ", imageurl='" + imageurl + '\'' +
+                '}';
     }
 }

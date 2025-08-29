@@ -15,12 +15,22 @@ public class CarService {
     }
 
     @Transactional(readOnly = true)
-    public List<Car> getCarsByBrand(String brand) {
-        BrandContextHolder.setBrand(brand); // choose DB
-        try {
-            return repo.findAll();
-        } finally {
-            BrandContextHolder.clear();
-        }
+    public List<Car> findAll() {
+        return repo.findAll();
+    }
+
+    @Transactional
+    public Car save(Car car) {
+        return repo.save(car);
+    }
+
+    @Transactional
+    public void deleteById(Long id) {
+        repo.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsById(Long id) {
+        return repo.existsById(id);
     }
 }
