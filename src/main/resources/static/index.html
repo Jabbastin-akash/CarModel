@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-car"></i> Car Management System</h1>
+            <div class="header-buttons">
+                <button class="btn btn-primary" onclick="showAddCarForm()">
+                    <i class="fas fa-plus"></i> Add New Car
+                </button>
+                <button class="btn btn-secondary" onclick="loadAllCars()">
+                    <i class="fas fa-refresh"></i> Refresh
+                </button>
+                <button class="btn btn-success" onclick="addSampleCars()">
+                    <i class="fas fa-magic"></i> Add Sample Cars
+                </button>
+            </div>
+        </header>
+
+        <!-- Add Car Form Modal -->
+        <div id="addCarModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-car-side"></i> Add New Car</h2>
+                    <span class="close" onclick="closeAddCarForm()">&times;</span>
+                </div>
+                <form id="addCarForm" class="car-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="brand">Brand:</label>
+                            <input type="text" id="brand" name="brand" required placeholder="e.g., Toyota">
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Model:</label>
+                            <input type="text" id="model" name="model" required placeholder="e.g., Camry">
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Year:</label>
+                            <input type="number" id="year" name="year" min="1900" max="2025" required placeholder="2023">
+                        </div>
+                        <div class="form-group">
+                            <label for="type">Type:</label>
+                            <select id="type" name="type" required>
+                                <option value="">Select Type</option>
+                                <option value="sedan">Sedan</option>
+                                <option value="suv">SUV</option>
+                                <option value="hatchback">Hatchback</option>
+                                <option value="sports">Sports</option>
+                                <option value="luxury">Luxury</option>
+                                <option value="truck">Truck</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="engine_type">Engine Type:</label>
+                            <input type="text" id="engine_type" name="engine_type" placeholder="e.g., V6, V8, Electric">
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel_efficiency">Fuel Efficiency:</label>
+                            <input type="text" id="fuel_efficiency" name="fuel_efficiency" placeholder="e.g., 25 MPG">
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Price ($):</label>
+                            <input type="number" id="price" name="price" step="0.01" min="0" placeholder="25000">
+                        </div>
+                        <div class="form-group">
+                            <label for="transmission">Transmission:</label>
+                            <select id="transmission" name="transmission">
+                                <option value="">Select Transmission</option>
+                                <option value="manual">Manual</option>
+                                <option value="automatic">Automatic</option>
+                                <option value="cvt">CVT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="seatingCapacity">Seating Capacity:</label>
+                            <input type="number" id="seatingCapacity" name="seatingCapacity" min="1" max="12" placeholder="5">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="image">Car Image:</label>
+                            <div class="file-input-container">
+                                <input type="file" id="carImage" name="file" accept="image/*">
+                                <div class="image-preview" id="imagePreview">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Select an image</span>
+                                </div>
+                            </div>
+                            <input type="hidden" id="imageurl" name="imageurl">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="features">Features:</label>
+                            <textarea id="features" name="features" rows="3" placeholder="e.g., GPS, Bluetooth, Leather seats"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Save Car
+                        </button>
+                        <button type="button" class="btn btn-cancel" onclick="closeAddCarForm()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="search-section">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search cars by brand, model, or type..." onkeyup="filterCars()">
+            </div>
+            <div class="filter-section">
+                <select id="brandFilter" onchange="filterCars()">
+                    <option value="">All Brands</option>
+                </select>
+                <select id="typeFilter" onchange="filterCars()">
+                    <option value="">All Types</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="hatchback">Hatchback</option>
+                    <option value="sports">Sports</option>
+                    <option value="luxury">Luxury</option>
+                    <option value="truck">Truck</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Cars Grid -->
+        <div id="carsContainer" class="cars-grid">
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading cars...
+            </div>
+        </div>
+
+        <!-- No cars found message -->
+        <div id="noCarsMessage" class="no-cars" style="display: none;">
+            <i class="fas fa-car-crash"></i>
+            <h3>No cars found</h3>
+            <p>Try adding some sample cars or add a new car manually.</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -112,7 +112,7 @@ public class Car {
     }
 
     public void setSeatingCapacity(int seatingCapacity) {
-        SeatingCapacity = seatingCapacity;
+        this.SeatingCapacity = seatingCapacity;
     }
 
     public void setFeatures(String features) {
